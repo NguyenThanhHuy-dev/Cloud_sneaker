@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from decouple import config
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 
@@ -24,7 +26,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG")
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 # Allowed hosts - read from environment variable (comma-separated values)
 ALLOWED_HOSTS = config(
@@ -118,6 +120,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'ecomm.urls'
@@ -151,6 +154,12 @@ DATABASES = {
     }
 }
 
+# Đọc DATABASE_URL từ file .env thông qua decouple
+db_url_config = config('DATABASE_URL', default=None)
+
+# Nếu tìm thấy (tức là có cấu hình), cập nhật vào DATABASES
+if db_url_config:
+    DATABASES['default'].update(dj_database_url.parse(db_url_config))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -232,3 +241,28 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 DEFAULT_DOMAIN = '127.0.0.1:8000'
 DEFAULT_HTTP_PROTOCOL = 'http'
+
+
+CSRF_TRUSTED_ORIGINS = ['https://*', 'http://*']
+
+# AWS S3 CONFIGURATION
+# Nếu có biến AWS_ACCESS_KEY_ID trong .env thì kích hoạt chế độ lưu S3
+if config('AWS_ACCESS_KEY_ID', default=None):
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_S3_VERIFY = True
+
+    # Cấu hình để Django dùng S3 lưu file tĩnh và media
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+        },
+    }
