@@ -195,15 +195,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# Static files (CSS, JavaScript, Images)
+# STATIC FILES (CSS, JS, Images - Code hệ thống)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static")  # Trỏ về folder 'static' mới tạo
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Nơi gom file khi deploy
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "public/media")]
-
-# Media files
-MEDIA_ROOT = os.path.join(BASE_DIR, 'public/media')
+# MEDIA FILES (User Uploads - Dữ liệu)
 MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'public/media') # Vẫn giữ nguyên chỗ cũ
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

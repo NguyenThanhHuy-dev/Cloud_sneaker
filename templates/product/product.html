@@ -1,5 +1,7 @@
 {% extends "base/base.html"%}
+
 {% block title %}{{product.product_name}} {% endblock %}
+
 {% block start %} {% load crispy_forms_tags %}
 
 <style>
@@ -20,23 +22,7 @@
     --text-dark: #1e293b;
   }
 
-  .like-btn {
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: bold;
-  }
-
-  .like-btn:hover {
-    background-color: var(--accent-color);
-    color: var(--text-dark);
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-  }
-
+  .like-btn,
   .dislike-btn {
     background-color: var(--primary-color);
     color: #fff;
@@ -47,6 +33,7 @@
     font-weight: bold;
   }
 
+  .like-btn:hover,
   .dislike-btn:hover {
     background-color: var(--accent-color);
     color: var(--text-dark);
@@ -82,7 +69,6 @@
   }
 
   @media (max-width: 768px) {
-
     .like-btn,
     .dislike-btn {
       padding: 0.3rem 0.8rem;
@@ -94,34 +80,29 @@
 <section class="section-content padding-y">
   <div class="container mt-3">
     {% include 'base/alert.html' %}
-    <!-- ============================ COMPONENT Product Details ================================= -->
     <div class="card">
       <div class="row no-gutters">
         <aside class="col-md-6">
-          <!-- Gallery-Wrap -->
           <article class="gallery-wrap">
             <div class="text-center mt-5 ml-3 mr-3 img-big-wrap">
               <div class="carousel-inner">
                 {% for image in product.product_images.all %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                  <img id="mainImage" src="{{ image.image_url }}" alt="{{ product.product_name }}" />
+                  <img id="mainImage" src="{{ image.image.url }}" alt="{{ product.product_name }}" />
                 </div>
                 {% endfor %}
               </div>
 
-              <!-- Thumnbs-Wrap -->
               <div class="form-row thumbs-wrap mt-5 d-flex justify-content-center">
                 {% for image in product.product_images.all %}
                 <p class="item-thumb mx-2">
-                  <img src="{{image.image_url}}" class="img-thumbnail" onclick="updateMainImage(this.src)" />
+                  <img src="{{image.image.url}}" class="img-thumbnail" onclick="updateMainImage(this.src)" />
                 </p>
                 {% endfor %}
               </div>
-              <!-- Thumnbs-Wrap End.// -->
-            </div>
+              </div>
           </article>
-          <!-- Gallery-Wrap End.// -->
-        </aside>
+          </aside>
         <main class="col-md-6 border-left">
           <article class="content-body">
             <h2 class="title">{{product.product_name}}</h2>
@@ -143,8 +124,6 @@
               </ul>
               <small class="label-rating text-muted">{{ product.reviews.count }} reviews</small>
             </div>
-            <!-- rating-wrap.// -->
-
             <div class="mb-3">
               {% if updated_price %}
               <var class="price h4">₹{{ updated_price }}.00</var>
@@ -152,10 +131,8 @@
               <var class="price h4">₹{{ product.price }}.00</var>
               {% endif %}
             </div>
-            <!-- price-detail-wrap .// -->
-
             <p style="line-height: 2rem; margin-top: revert; text-align: justify">
-              {{product.product_desription}}
+              {{product.product_description}}
             </p>
             <br />
             <dl class="row">
@@ -181,7 +158,7 @@
 
                   <label class="custom-control custom-radio custom-control-inline">
                     <input type="radio" name="selected_size" value="{{ size.size_name }}"
-                      onchange="get_correct_price('{{ size.size_name }}'); updateCartUrl();"
+                      onchange="get_correct_price('{{ size.size_name }}')"
                       id="size-{{ size.size_name }}" {% if selected_size == size.size_name %} checked {% endif %}
                       class="custom-control-input" />
                     <div class="custom-control-label">{{ size.size_name }}</div>
@@ -193,7 +170,6 @@
               {% endif %}
             </div>
 
-            <!-- Add to Wishlist Button -->
             <div class="form-group d-flex justify-content-start">
               <div class="d-sm-flex mr-2">
                 <div class="mb-2 mb-sm-0 mr-0 mr-sm-3">
@@ -216,7 +192,6 @@
       </div>
     </div>
 
-    <!-- Related Products Section -->
     <h3 class="title padding-y-sm">Related products</h3>
     {% if related_products%}
     {% with related_products as list_products %}
@@ -225,11 +200,8 @@
     {% else %}
     <p>No related products found.</p>
     {% endif %}
-    <!-- Related Products Section End -->
-
     <hr />
 
-    <!-- Product Review Section -->
     <h3 class="title padding-bottom-sm">Reviews</h3>
 
     {% for review in product.reviews.all %}
@@ -246,13 +218,11 @@
           </div>
           <div class="d-flex flex-wrap align-items-center gap-2">
             {% if request.user.is_authenticated %}
-            <!-- Like Button -->
             <button class="btn like-btn d-flex align-items-center" onclick="toggleLike('{{ review.uid }}')">
               <i class="fas fa-thumbs-up me-2"></i>
               <span id="like-count-{{ review.uid }}">{{ review.like_count }}</span>
             </button>
 
-            <!-- Dislike Button -->
             <button class="btn dislike-btn d-flex align-items-center" onclick="toggleDislike('{{ review.uid }}')">
               <i class="fas fa-thumbs-down me-2"></i>
               <span id="dislike-count-{{ review.uid }}">{{ review.dislike_count }}</span>
@@ -270,11 +240,10 @@
             </button>
             {% endif %}
 
-            <!-- Delete Button -->
             {% if review.user == request.user %}
             <button class="btn btn-link p-0 delete-review-link ms-auto" title="Delete Review" data-bs-toggle="modal"
               data-bs-target="#deleteReviewModal"
-              onclick="setDeleteAction('{% url 'delete_review' product.slug review.uid %}')" type="button">
+              data-delete-url="{% url 'delete_review' product.slug review.uid %}">
               <i class="fas fa-trash-alt"></i>
             </button>
             {% endif %}
@@ -286,7 +255,6 @@
     <p class="padding-bottom-sm">No reviews yet...</p>
     {% endfor %}
 
-    <!-- Modern Review Form -->
     <div class="review-form-section mt-5">
       <div class="section-header text-center mb-4">
         <h3 class="section-title">Share Your Experience</h3>
@@ -299,7 +267,6 @@
           <form method="POST" action="" class="modern-review-form" id="reviewForm">
             {% csrf_token %}
 
-            <!-- User Info Section -->
             <div class="reviewer-info mb-4">
               <div class="d-flex align-items-center">
                 <div class="reviewer-avatar">
@@ -318,7 +285,6 @@
               </div>
             </div>
 
-            <!-- Rating Section -->
             <div class="rating-section mb-4">
               <label class="form-label fw-semibold mb-3">How would you rate this product?</label>
               <div class="star-rating-container">
@@ -338,7 +304,6 @@
               </div>
             </div>
 
-            <!-- Review Content Section -->
             <div class="review-content-section mb-4">
               <label for="reviewContent" class="form-label fw-semibold">Write your review</label>
               <textarea name="content" id="reviewContent" class="form-control review-textarea" rows="4"
@@ -346,7 +311,6 @@
                 maxlength="500" required></textarea>
             </div>
 
-            <!-- Submit Section -->
             <div class="submit-section">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">
@@ -388,11 +352,8 @@
       </div>
       {% endif %}
     </div>
-    <!-- Product Review Section End-->
-    <!-- ============================ COMPONENT Product Details End ================================= -->
-  </div>
+    </div>
 
-  <!-- Delete Review Confirmation Modal -->
   <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -420,7 +381,6 @@
   </div>
 </section>
 
-<!-- Modern Review Form Styles -->
 <style>
   /* Unified Color System */
   :root {
@@ -802,11 +762,6 @@
     document.getElementById("mainImage").src = src;
   }
 
-  function setDeleteAction(actionUrl) {
-    const deleteForm = document.getElementById("deleteReviewForm");
-    deleteForm.action = actionUrl;
-  }
-
   function toggleLike(reviewId) {
     fetch(`/product/like-review/${reviewId}/`, {
       method: "POST",
@@ -855,6 +810,18 @@
         mainImage.classList.add("zoomed-in");
       }
     });
+
+    // Xử lý Modal Delete cho Review (Đã thêm mới)
+    const deleteReviewModal = document.getElementById("deleteReviewModal");
+    if (deleteReviewModal) {
+      deleteReviewModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget; // Nút được bấm
+        const deleteUrl = button.getAttribute("data-delete-url"); // Lấy URL
+        
+        const deleteForm = document.getElementById("deleteReviewForm");
+        deleteForm.action = deleteUrl; // Gán vào form
+      });
+    }
   });
 
   // Modern Review Form JavaScript
