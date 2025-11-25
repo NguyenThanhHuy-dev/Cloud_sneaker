@@ -37,11 +37,9 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductImageStandaloneAdmin(admin.ModelAdmin):
     list_display = ['product', 'image_thumbnail']
     
-    # img_preview là hàm bạn đã viết sẵn trong models.py
     readonly_fields = ['img_preview']
 
     def image_thumbnail(self, obj):
-        # Sửa lỗi ở đây: Dùng obj.image thay vì obj.image_url
         if obj.image:
             return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.image.url)
         return "No Image"
