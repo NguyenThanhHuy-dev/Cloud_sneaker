@@ -38,7 +38,7 @@ BASE_URL = config("BASE_URL", default="http://127.0.0.1:8000")
 
 # Application definition
 
-SITE_ID = 1
+SITE_ID = 3
 
 INSTALLED_APPS = [
     'django.contrib.admin',
