@@ -80,11 +80,17 @@ def register_page(request):
 
         profile = Profile.objects.get(user=user_obj)
         profile.email_token = str(uuid.uuid4())
+        
+        # 1. Đặt luôn là True để xác thực ngay lập tức
+        profile.is_email_verified = True 
         profile.save()
 
-        send_account_activation_email(email, profile.email_token)
-        messages.success(request, "An email has been sent to your mail.")
-        return HttpResponseRedirect(request.path_info)
+        # 2. Comment (ẩn) dòng gửi email đi vì không cần nữa
+        # send_account_activation_email(email, profile.email_token)
+
+        # 3. Thông báo thành công và chuyển thẳng sang trang đăng nhập
+        messages.success(request, "Đăng ký thành công! Bạn có thể đăng nhập ngay.")
+        return redirect('login')
 
     return render(request, 'accounts/register.html')
 
