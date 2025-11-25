@@ -38,7 +38,7 @@ BASE_URL = config("BASE_URL", default="http://127.0.0.1:8000")
 
 # Application definition
 
-SITE_ID = 3
+SITE_ID = 1
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -73,8 +73,18 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY')
 SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET')
 
+# THÊM ĐOẠN NÀY CHO GOOGLE:
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
+        # THÊM CỤC APP NÀY VÀO:
+        "APP": {
+            "client_id": SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
+            "secret": SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+            "key": ""
+        },
         "SCOPE": [
             "profile",
             "email"
