@@ -1,7 +1,6 @@
 {% extends "base/base.html" %}
 {% block title %}Shopping Cart{% endblock %}
 
-<!-- Hide footer on cart page -->
 {% block footer %}{% endblock %}
 
 {% block start %} {% load static %}
@@ -65,8 +64,7 @@
                   <div class="price-wrap">
                     <var class="price">₹{{ cart_item.get_product_price }} </var>
                   </div>
-                  <!-- price-wrap .// -->
-                </td>
+                  </td>
                 <td class="text-right">
                   <a href="{% url 'remove_cart' cart_item.uid %}" class="btn btn-outline-primary cart-remove-btn">
                     Remove
@@ -88,8 +86,6 @@
             </a>
           </div>
         </div>
-        <!-- card.// -->
-
         <div class="alert delivery-alert mt-3">
           <p class="icontext">
             <i class="icon delivery-icon fa fa-truck"></i> Free Delivery within
@@ -97,7 +93,6 @@
           </p>
         </div>
       </main>
-      <!-- col.// -->
       <aside class="col-md-3">
         <div class="card mb-3">
           <div class="card-body">
@@ -122,9 +117,7 @@
               {% endif %}
             </form>
           </div>
-          <!-- card-body.// -->
-        </div>
-        <!-- card .// -->
+          </div>
         <div class="card">
           <div class="card-body">
             <dl class="dlist-align">
@@ -150,58 +143,14 @@
               <img src="{% static 'images/misc/payments.png' %}" height="26" />
             </p>
           </div>
-          <!-- card-body.// -->
-        </div>
-        <!-- card .// -->
-      </aside>
-      <!-- col.// -->
-    </div>
+          </div>
+        </aside>
+      </div>
   </div>
-  <!-- container .//  -->
-</section>
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </section>
 
 <script>
-  var options = {
-    key: "rzp_test_5XxorWz3z1N2m5",
-    amount: "{{ cart.get_cart_total_price_after_coupon|floatformat:0 }}",
-    currency: "INR",
-    name: "Django Ecommerce Site",
-    description: "Purchased",
-    order_id: "{{ payment.id }}",
-
-    handler: function (response) {
-      console.log("Success");
-      window.location.href = `{{ base_url }}/accounts/success/?order_id={{ payment.id }}`;
-    },
-    prefill: {
-      name: "Gaurav Kumar",
-      email: "gaurav.kumar@example.com",
-      contact: "9000090000",
-    },
-    notes: {
-      address: "Razorpay Corporate Office",
-    },
-    theme: {
-      color: "#3399cc",
-    },
-  };
-  var rzp1 = new Razorpay(options);
-  rzp1.on("payment.failed", function (response) {
-    alert(response.error.code);
-    alert(response.error.description);
-    alert(response.error.source);
-    alert(response.error.step);
-    alert(response.error.reason);
-    alert(response.error.metadata.order_id);
-    alert(response.error.metadata.payment_id);
-  });
-  document.getElementById("rzp-button1").onclick = function (e) {
-    rzp1.open();
-    e.preventDefault();
-  };
-
+  // Hàm xử lý cập nhật số lượng (Giữ nguyên logic cũ)
   function updateCartItem(selectElement, cartItemId) {
     const quantity = selectElement.value;
 
@@ -225,6 +174,21 @@
         }
       });
   }
+
+  // --- LOGIC MUA HÀNG GIẢ LẬP (FAKE PURCHASE) ---
+  document.getElementById("rzp-button1").onclick = function (e) {
+    e.preventDefault();
+    
+    // 1. Hiển thị thông báo đang xử lý cho người dùng thấy
+    this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing Payment...';
+    this.disabled = true; // Khóa nút để tránh bấm nhiều lần
+    
+    // 2. Chờ 1.5 giây giả vờ như đang gọi ngân hàng
+    setTimeout(function() {
+        // 3. Chuyển hướng thẳng đến trang Success với Order ID giả đã tạo ở server
+        window.location.href = `{{ base_url }}/accounts/success/?order_id={{ payment.id }}`;
+    }, 1500);
+  };
 </script>
 
 <style>

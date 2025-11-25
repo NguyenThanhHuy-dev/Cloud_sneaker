@@ -21,7 +21,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect, render, get_object_or_404
 from accounts.forms import UserUpdateForm, UserProfileForm, ShippingAddressForm, CustomPasswordChangeForm
-from django.db.models import Q  # <--- Thêm dòng này vào nhóm import
+from django.db.models import Q
 
 # Create your views here.
 
@@ -32,19 +32,24 @@ def login_page(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user_obj = User.objects.filter(username=username)
+        
+        # Tìm user theo username HOẶC email
+        user_obj = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
-        if not user_obj.exists():
+        if not user_obj:
             messages.warning(request, 'Account not found!')
             return HttpResponseRedirect(request.path_info)
 
-        # if not user_obj[0].profile.is_email_verified:
+        # Bỏ qua kiểm tra email verified để tiện demo
+        # if not user_obj.profile.is_email_verified:
         #     messages.error(request, 'Account not verified!')
         #     return HttpResponseRedirect(request.path_info)
 
-        user_obj = authenticate(username=username, password=password)
-        if user_obj:
-            login(request, user_obj)
+        # authenticate yêu cầu username, nên ta lấy username thật từ user_obj vừa tìm được
+        user = authenticate(username=user_obj.username, password=password)
+        
+        if user:
+            login(request, user)
             messages.success(request, 'Login Successfull.')
 
             # Check if the next URL is safe
@@ -67,8 +72,7 @@ def register_page(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        user_obj = User.objects.filter(username=username, email=email)
-
+        # Kiểm tra xem Username HOẶC Email đã tồn tại chưa
         if User.objects.filter(Q(username=username) | Q(email=email)).exists():
             messages.info(request, 'Username or email already exists!')
             return HttpResponseRedirect(request.path_info)
@@ -81,7 +85,7 @@ def register_page(request):
         profile = Profile.objects.get(user=user_obj)
         profile.email_token = str(uuid.uuid4())
         
-        # 1. Đặt luôn là True để xác thực ngay lập tức
+        # 1. Đặt luôn là True để xác thực ngay lập tức (Demo mode)
         profile.is_email_verified = True 
         profile.save()
 
@@ -149,9 +153,8 @@ def cart(request):
         cart_obj = Cart.objects.get(is_paid=False, user=user)
 
     except Exception as e:
-        # Nếu chưa có giỏ hàng thì không cần báo lỗi, chỉ hiển thị giỏ trống
-        # Hoặc redirect về index nếu bạn muốn bắt buộc mua hàng
-        pass 
+        # Giỏ hàng trống thì không làm gì, render trang trống
+        pass
 
     if request.method == 'POST':
         coupon = request.POST.get('coupon')
@@ -184,40 +187,28 @@ def cart(request):
         cart_total_in_paise = int(
             cart_obj.get_cart_total_price_after_coupon() * 100)
 
-        # Razorpay Integration with Dummy Key Handling
-        client = razorpay.Client(
-            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET_KEY))
+        # --- FAKE PAYMENT LOGIC (DEMO MODE) ---
+        # Thay vì gọi Razorpay thật, ta tự tạo ID giả để bypass lỗi Authentication
         
-        try:
-            # Cố gắng tạo đơn hàng thật
-            if cart_total_in_paise >= 100: # Razorpay yêu cầu tối thiểu 1 INR (100 paise)
-                payment = client.order.create(
-                    {'amount': cart_total_in_paise, 'currency': 'INR', 'payment_capture': 1})
-                cart_obj.razorpay_order_id = payment['id']
-                cart_obj.save()
-            
-        except Exception as e:
-            print(f"⚠️ Razorpay API Error (Using Dummy Mode): {str(e)}")
-            # TẠO DỮ LIỆU GIẢ ĐỂ WEB KHÔNG SẬP
-            # Tạo một ID đơn hàng giả ngẫu nhiên
-            fake_order_id = f'order_fake_{uuid.uuid4().hex[:10]}'
-            
-            payment = {
-                'id': fake_order_id,
-                'amount': cart_total_in_paise,
-                'currency': 'INR',
-                'status': 'created'
-            }
-            # Lưu ID giả vào DB để tí nữa trang Success còn tìm thấy giỏ hàng này
-            cart_obj.razorpay_order_id = fake_order_id
-            cart_obj.save()
+        # Tạo một mã đơn hàng giả ngẫu nhiên
+        fake_order_id = f"fake_order_{uuid.uuid4()}"
+        
+        # Lưu mã này vào giỏ hàng (để tí nữa trang success tìm lại được cart này)
+        cart_obj.razorpay_order_id = fake_order_id
+        cart_obj.save()
+        
+        # Tạo biến payment giả để truyền xuống HTML
+        payment = {
+            'id': fake_order_id,
+            'amount': cart_total_in_paise,
+        }
+        # --------------------------------------
 
     context = {
         'cart': cart_obj,
         'payment': payment,
         'quantity_range': range(1, 6),
         'base_url': settings.BASE_URL,
-        # Truyền thêm key ID để frontend dùng (nếu cần hiển thị)
         'RAZORPAY_KEY_ID': settings.RAZORPAY_KEY_ID, 
     }
     return render(request, 'accounts/cart.html', context)
@@ -265,7 +256,7 @@ def remove_coupon(request, cart_id):
 # Payment success view
 def success(request):
     order_id = request.GET.get('order_id')
-    # Tìm giỏ hàng dựa trên Razorpay Order ID (Thật hoặc Giả đều tìm được)
+    # Tìm giỏ hàng dựa trên Order ID (fake hoặc thật đều tìm được)
     cart = get_object_or_404(Cart, razorpay_order_id=order_id)
 
     # Mark the cart as paid
@@ -399,10 +390,9 @@ def order_history(request):
 
 # Create an order view
 def create_order(cart):
-    # Sử dụng Razorpay Order ID làm Order ID của mình
+    # Sử dụng Razorpay Order ID (giờ là Fake ID) làm Order ID của mình
     order_id = cart.razorpay_order_id 
     if not order_id:
-        # Fallback nếu không có Razorpay ID
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
 
     order, created = Order.objects.get_or_create(
@@ -411,7 +401,7 @@ def create_order(cart):
         payment_status="Paid",
         # Nếu user chưa có shipping address thì để trống hoặc lấy mặc định
         shipping_address=cart.user.profile.shipping_address if hasattr(cart.user.profile, 'shipping_address') else "Default Address",
-        payment_mode="Razorpay",
+        payment_mode="Razorpay (Demo)", # Đánh dấu là demo
         order_total_price=cart.get_cart_total(),
         coupon=cart.coupon,
         grand_total=cart.get_cart_total_price_after_coupon(),
