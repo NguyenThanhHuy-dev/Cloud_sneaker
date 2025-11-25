@@ -21,7 +21,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect, render, get_object_or_404
 from accounts.forms import UserUpdateForm, UserProfileForm, ShippingAddressForm, CustomPasswordChangeForm
-
+from django.db.models import Q  # <--- Thêm dòng này vào nhóm import
 
 # Create your views here.
 
@@ -69,7 +69,7 @@ def register_page(request):
 
         user_obj = User.objects.filter(username=username, email=email)
 
-        if user_obj.exists():
+        if User.objects.filter(Q(username=username) | Q(email=email)).exists():
             messages.info(request, 'Username or email already exists!')
             return HttpResponseRedirect(request.path_info)
 
